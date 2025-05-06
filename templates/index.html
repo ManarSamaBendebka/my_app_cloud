@@ -1,0 +1,74 @@
+<!-- لا تغييرات في HTML الرأس -->
+<!-- التغييرات فقط في أسماء الحقول في جافاسكريبت -->
+<script>
+  const userTable = document.getElementById('userTable');
+  const searchInput = document.getElementById('search');
+  let editModal = new bootstrap.Modal(document.getElementById('editModal'));
+
+  function loadUsers(query = '') {
+    fetch(`/api/users?q=${query}`)
+      .then(res => res.json())
+      .then(data => {
+        userTable.innerHTML = '';
+        data.forEach(user => {
+          userTable.innerHTML += `
+            <tr>
+              <td>${user.name}</td>
+              <td>${user.email}</td>
+              <td>
+                <button class="btn btn-sm btn-info me-2" onclick="openEdit(${user.id}, '${user.name}', '${user.email}')">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">Delete</button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+  }
+
+  document.getElementById('userForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email })
+    }).then(() => {
+      document.getElementById('userForm').reset();
+      loadUsers();
+    });
+  });
+
+  function openEdit(id, name, email) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editEmail').value = email;
+    editModal.show();
+  }
+
+  document.getElementById('editForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const id = document.getElementById('editId').value;
+    const name = document.getElementById('editName').value;
+    const email = document.getElementById('editEmail').value;
+    fetch(`/api/users/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email }) 
+    }).then(() => {
+      editModal.hide();
+      loadUsers();
+    });
+  });
+
+  function deleteUser(id) {
+    if (confirm('Are you sure you want to delete this user?')) {
+      fetch(`/api/users/${id}`, { method: 'DELETE' })
+        .then(() => loadUsers());
+    }
+  }
+
+  searchInput.addEventListener('input', () => loadUsers(searchInput.value));
+  loadUsers();
+</script>
+
